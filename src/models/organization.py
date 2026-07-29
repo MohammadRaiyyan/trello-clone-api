@@ -1,8 +1,8 @@
+import uuid
 from datetime import datetime, timezone
 from enum import Enum
 
 from sqlmodel import AutoString, Field, SQLModel, UniqueConstraint
-from sqlmodel.main import uuid
 
 
 class Organization(SQLModel, table=True):
@@ -82,7 +82,7 @@ class OrganizationInvites(SQLModel, table=True):
     invited_by: uuid.UUID = Field(nullable=False, foreign_key="users.id")
     token_hash: str = Field(nullable=False)
     staus: InviteStatus = Field(
-        nullable=False, default=InviteStatus.PENDING, sa_type=InviteStatus
+        nullable=False, default=InviteStatus.PENDING, sa_type=AutoString
     )
     expires_at: datetime = Field(nullable=False)
     created_at: datetime = Field(

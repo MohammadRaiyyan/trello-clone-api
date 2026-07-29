@@ -1,2 +1,63 @@
+# ==========================================
+# Environment Variables & Secrets (CRITICAL)
+# ==========================================
 .env
-env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ==========================================
+# Python & Virtual Environments
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging & Builds
+dist/
+build/
+*.egg-info/
+*.egg
+
+# ==========================================
+# Testing & Code Quality
+# ==========================================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.nox/
+.tox/
+
+# ==========================================
+# Local Databases & Logs
+# ==========================================
+*.sqlite
+*.sqlite3
+*.db
+*.log
+
+# ==========================================
+# IDEs & Editors
+# ==========================================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+*.swp
+*.swo
+
+# ==========================================
+# Operating System Files
+# ==========================================
+.DS_Store
+Thumbs.db

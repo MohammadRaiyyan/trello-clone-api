@@ -5,10 +5,10 @@ from passlib.context import CryptContext
 
 from src.core.settings import settings
 
-pwd_context_manager = CryptContext(schemes=["bcrypt"], depricated="auto")
+pwd_context_manager = CryptContext(schemes=["bcrypt"])
 
 SECRET_KEY: str = settings.SECRET_KEY
-ALGORITHIM: str = settings.ALGORITHIM
+ALGORITHM: str = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MIN: int = settings.ACCESS_TOKEN_EXPIRE_MIN
 
 
@@ -23,8 +23,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(subject: str, email: str) -> str:
     expires = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MIN)
     to_encode = {"sub": subject, "email": email, "type": "access", "exp": expires}
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHIM)
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def decode_token(token: str) -> dict:
-    return jwt.decode(token, SECRET_KEY, algorithms=ALGORITHIM)
+    return jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)

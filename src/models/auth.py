@@ -16,7 +16,7 @@ class RefreshToken(SQLModel, table=True):
     )
     token_hash: str = Field(nullable=False)
     expires_at: datetime.datetime = Field(nullable=False)
-    revoked_at: datetime.datetime = Field(nullable=True)
+    revoked_at: datetime.datetime = Field(nullable=True, default=None)
     created_at: datetime.datetime = Field(
         nullable=False,
         default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),
@@ -34,10 +34,11 @@ class VerificationToken(SQLModel, table=True):
     id: uuid.UUID = Field(
         primary_key=True, default_factory=uuid.uuid4, index=True, nullable=False
     )
+    user_id: uuid.UUID = Field(foreign_key="users.id", index=True, ondelete="CASCADE")
     token_hash: str = Field(nullable=False)
     type: TokenType = Field(sa_type=AutoString, nullable=False, index=True)
     expires_at: datetime.datetime = Field(nullable=False)
-    used_at: datetime.datetime = Field(nullable=True)
+    used_at: datetime.datetime = Field(nullable=True, default=None)
     created_at: datetime.datetime = Field(
         nullable=False,
         default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),

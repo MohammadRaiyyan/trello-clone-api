@@ -13,18 +13,16 @@ from src.models.user import User
 from src.services.user import UserServices
 
 DATABASE_URL: str = settings.DATABASE_URL
-engine = create_async_engine(DATABASE_URL, echo=True)
-
-async_session_maker = async_sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
+DEBUG: bool = settings.DEBUG
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=DEBUG,
+    pool_pre_ping=True,
 )
 
-
-async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
+async_session_maker = async_sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False
+)
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:

@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MIN: int
     VERIFY_REFRESH_TOKEN_EXPIRE_HR: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
+    DEBUG: bool
+    APP_NAME: str
+    APP_VERSION: str
 
     model_config = SettingsConfigDict(env_file=".env")
 

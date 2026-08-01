@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -28,3 +29,7 @@ def create_access_token(subject: str, email: str) -> str:
 
 def decode_token(token: str) -> dict:
     return jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
+
+
+def hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()

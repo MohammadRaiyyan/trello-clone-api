@@ -1,11 +1,13 @@
 import uuid
-from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
 from sqlalchemy import Column
+from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlmodel import AutoString, Field, Index, SQLModel, desc
+from sqlmodel import Field, Index, SQLModel, desc
+
+from src.models.base import BaseUUIModel, TimeStampMixin
 
 
 class ActivityActionType(str, Enum):
@@ -79,21 +81,43 @@ class ActivityActionType(str, Enum):
     LABEL_DELETED = "label_deleted"
 
 
-class Activity(SQLModel, table=True):
+class Activity(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
     __tablename__ = "activity_logs"
 
-    id: uuid.UUID = Field(
-        nullable=False, index=True, primary_key=True, default_factory=uuid.uuid4
-    )
     board_id: uuid.UUID = Field(
-        nullable=False, foreign_key="boards.id", ondelete="CASCADE"
+        nullable=False,
+        foreign_key="boards.id",
+        ondelete="CASCADE",
     )
-    user_id: uuid.UUID = Field(nullable=False, foreign_key="users.id")
-    action_type: ActivityActionType = Field(nullable=False, sa_type=AutoString)
+
+    user_id: uuid.UUID = Field(
+        nullable=False,
+        foreign_key="users.id",
+    )
+
+    action_type: ActivityActionType = Field(
+        sa_column=Column(
+            SQLAlchemyEnum(
+                ActivityActionType,
+                name="activity_action_type",
+            ),
+            nullable=False,
+        )
+    )
+
     meta_data: dict[str, Any] | None = Field(
-        default=None, sa_column=Column("metadata", JSONB)
+        default=None,
+        sa_column=Column(
+            "metadata",
+            JSONB,
+            nullable=True,
+        ),
     )
-    created_at: datetime = Field(
-        nullable=False, default_factory=lambda: datetime.now(timezone.utc)
+
+    __table_args__ = (
+        Index(
+            "idx_activity_board",
+            "board_id",
+            desc("created_at"),
+        ),
     )
-    __table_args__ = (Index("idx_activity_board", "board_id", desc("created_at")),)

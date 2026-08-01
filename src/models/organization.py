@@ -1,31 +1,23 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum
 
+from sqlalchemy import Column
+from sqlalchemy import Enum as SQLEnum
 from sqlmodel import AutoString, Field, SQLModel, UniqueConstraint
 
+from src.models.base import BaseUUIModel, TimeStampMixin
 
-class Organization(SQLModel, table=True):
+
+class Organization(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
     __tablename__ = "organizations"  # pyright: ignore[reportAssignmentType]
-
-    id: uuid.UUID = Field(
-        primary_key=True, default_factory=uuid.uuid4, index=True, nullable=False
-    )
     name: str = Field(
         nullable=False,
     )
     slug: str = Field(nullable=False, unique=True)
-    description: str = Field(nullable=True)
-    logo_url: str = Field(nullable=True)
+    description: str | None = Field(default=None)
+    logo_url: str | None = Field(default=True)
     created_by: uuid.UUID = Field(nullable=False, foreign_key="users.id")
-    created_at: datetime = Field(
-        nullable=False, default_factory=lambda: datetime.now(timezone.utc)
-    )
-    updated_at: datetime = Field(
-        nullable=False,
-        default_factory=lambda: datetime.now(timezone.utc),
-        sa_column_kwargs={"onupdate": lambda: datetime.now(timezone.utc)},
-    )
 
 
 class OrgRole(str, Enum):
@@ -34,12 +26,9 @@ class OrgRole(str, Enum):
     MEMBER = "member"
 
 
-class OrganizationMember(SQLModel, table=True):
+class OrganizationMember(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
     __tablename__ = "organization_members"  # pyright: ignore[reportAssignmentType]
 
-    id: uuid.UUID = Field(
-        primary_key=True, default_factory=uuid.uuid4, index=True, nullable=False
-    )
     organization_id: uuid.UUID = Field(
         nullable=False, foreign_key="organizations.id", ondelete="CASCADE"
     )
@@ -50,10 +39,6 @@ class OrganizationMember(SQLModel, table=True):
         nullable=False,
         default=OrgRole.MEMBER,
         sa_type=AutoString,
-    )
-
-    joined_at: datetime = Field(
-        nullable=False, default_factory=lambda: datetime.now(timezone.utc)
     )
 
     __table_args__ = (
@@ -67,12 +52,8 @@ class InviteStatus(str, Enum):
     EXPIRED = "expired"
 
 
-class OrganizationInvites(SQLModel, table=True):
+class OrganizationInvite(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
     __tablename__ = "organization_invites"  # pyright: ignore[reportAssignmentType]
-
-    id: uuid.UUID = Field(
-        primary_key=True, default_factory=uuid.uuid4, index=True, nullable=False
-    )
 
     organization_id: uuid.UUID = Field(
         nullable=False, foreign_key="organizations.id", ondelete="CASCADE"
@@ -80,11 +61,26 @@ class OrganizationInvites(SQLModel, table=True):
     email: str = Field(nullable=False)
     role: OrgRole = Field(nullable=False, default=OrgRole.MEMBER, sa_type=AutoString)
     invited_by: uuid.UUID = Field(nullable=False, foreign_key="users.id")
-    token_hash: str = Field(nullable=False)
-    staus: InviteStatus = Field(
-        nullable=False, default=InviteStatus.PENDING, sa_type=AutoString
+    token_hash: str = Field(
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    status: InviteStatus = Field(
+        default=InviteStatus.PENDING,
+        sa_column=Column(
+            SQLEnum(
+                InviteStatus,
+                name="invite_status_type",
+            ),
+            nullable=False,
+        ),
     )
     expires_at: datetime = Field(nullable=False)
-    created_at: datetime = Field(
-        nullable=False, default_factory=lambda: datetime.now(timezone.utc)
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "email",
+            name="uq_org_invite_email",
+        ),
     )

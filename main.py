@@ -2,17 +2,21 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-import src.models
-from src.database import init_db
+from src.core.settings import settings
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
+
     yield
 
 
-app = FastAPI(title="Trello Clone API", lifespan=lifespan)
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    lifespan=lifespan,
+    root_path="/api/v1/",
+)
 
 
 @app.get("/health")

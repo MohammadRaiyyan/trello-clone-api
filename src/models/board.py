@@ -1,8 +1,9 @@
 import uuid
-from datetime import datetime, timezone
 from enum import Enum
 
 from sqlmodel import AutoString, Field, Index, SQLModel, UniqueConstraint, text
+
+from src.models.base import BaseUUIModel, TimeStampMixin
 
 
 class BoardVisibility(str, Enum):
@@ -11,12 +12,9 @@ class BoardVisibility(str, Enum):
     PUBLIC = "public"
 
 
-class Board(SQLModel, table=True):
+class Board(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
     __tablename__ = "boards"
 
-    id: uuid.UUID = Field(
-        nullable=False, index=True, primary_key=True, default_factory=uuid.uuid4
-    )
     organization_id: uuid.UUID = Field(
         nullable=False, foreign_key="organizations.id", ondelete="CASCADE"
     )
@@ -28,20 +26,17 @@ class Board(SQLModel, table=True):
     )
     is_archived: bool = Field(nullable=False, default=False)
     created_by: uuid.UUID = Field(nullable=False, foreign_key="users.id")
-    created_at: datetime = Field(
-        nullable=False, default_factory=lambda: datetime.now(timezone.utc)
-    )
-    updated_at: datetime = Field(
-        nullable=False,
-        default_factory=lambda: datetime.now(timezone.utc),
-        sa_column_kwargs={"onupdate": lambda: datetime.now(timezone.utc)},
-    )
 
     __table_args__ = (
         Index(
             "idx_boards_org",
             "organization_id",
             postgresql_where=text("is_archived = FALSE"),
+        ),
+        UniqueConstraint(
+            "organization_id",
+            "name",
+            name="uq_org_board_name",
         ),
     )
 
@@ -52,22 +47,20 @@ class BoardRole(str, Enum):
     VIEWER = "viewer"
 
 
-class BoardMember(SQLModel, table=True):
+class BoardMember(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
     __tablename__ = "board_members"
-    id: uuid.UUID = Field(
-        nullable=False, index=True, primary_key=True, default_factory=uuid.uuid4
-    )
     board_id: uuid.UUID = Field(
         nullable=False, foreign_key="boards.id", ondelete="CASCADE"
     )
     user_id: uuid.UUID = Field(
         nullable=False, foreign_key="users.id", ondelete="CASCADE"
     )
+    invited_by: uuid.UUID = Field(
+        nullable=False,
+        foreign_key="users.id",
+    )
     role: BoardRole = Field(
         nullable=False, default=BoardRole.EDITOR, sa_type=AutoString
-    )
-    added_at: datetime = Field(
-        nullable=False, default_factory=lambda: datetime.now(timezone.utc)
     )
 
     __table_args__ = (UniqueConstraint("board_id", "user_id", name="uq_board_member"),)

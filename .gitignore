@@ -1,63 +1,45 @@
-# ==========================================
-# Environment Variables & Secrets (CRITICAL)
-# ==========================================
-.env
-.env.*
-!.env.example
-*.pem
-*.key
+# Virtual Environment
+.venv/
+venv/
+env/
 
-# ==========================================
-# Python & Virtual Environments
-# ==========================================
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Virtual environments
-.venv/
-venv/
-env/
-ENV/
+# Environment Variables
+.env
 
-# Packaging & Builds
-dist/
-build/
-*.egg-info/
-*.egg
+# IDE
+.vscode/
+.idea/
 
-# ==========================================
-# Testing & Code Quality
-# ==========================================
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-.nox/
-.tox/
+# macOS
+.DS_Store
 
-# ==========================================
-# Local Databases & Logs
-# ==========================================
-*.sqlite
-*.sqlite3
-*.db
+# Logs
 *.log
 
-# ==========================================
-# IDEs & Editors
-# ==========================================
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-.idea/
-*.swp
-*.swo
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
 
-# ==========================================
-# Operating System Files
-# ==========================================
-.DS_Store
-Thumbs.db
+# Type Checkers
+.mypy_cache/
+.pyright/
+
+# Ruff
+.ruff_cache/
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Alembic (optional)
+# alembic/versions/*.pyc

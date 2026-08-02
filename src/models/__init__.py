@@ -11,6 +11,6 @@ from .card import (
     Comment,
     Label,
 )
-from .column import Column
-from .organization import Organization, OrganizationInvites, OrganizationMember
+from .column import BoardColumn
+from .organization import Organization, OrganizationInvite, OrganizationMember
 from .user import User

@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     DEBUG: bool
     APP_NAME: str
     APP_VERSION: str
+    RESEND_API_KEY: str
+    EMAIL_FROM: str
+    FRONTEND_URL: str
 
     model_config = SettingsConfigDict(env_file=".env")
 

@@ -9,13 +9,13 @@ from src.schemas.manifest import (
     ManifestUser,
     OnboardingStatus,
 )
-from src.services.invitation import InvitationServices
-from src.services.organization import OrganizationServices
+from src.services.invitation import InvitationService
+from src.services.organization import OrganizationService
 from src.services.user import UserServices
 
 user_services = UserServices()
-organization_services = OrganizationServices()
-invitation_services = InvitationServices()
+organization_services = OrganizationService()
+invitation_services = InvitationService()
 
 
 class ManifestServices:
@@ -29,16 +29,24 @@ class ManifestServices:
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
-        organizations = await organization_services.get_user_organization(
+        organizations = await organization_services.get_user_organizations(
             user_id, session
         )
         invitaitons = await invitation_services.get_pending_invitations(
-            user_id, session
+            user_email=user.email, session=session
         )
         return ManifestResponse(
             user=ManifestUser.model_validate(user),
             organizations=[
-                ManifestOrganization.model_validate(org) for org in organizations
+                ManifestOrganization(
+                    id=organization.id,
+                    name=organization.name,
+                    slug=organization.slug,
+                    logo_url=organization.logo_url,
+                    created_by=organization.created_by,
+                    role=membership.role,
+                )
+                for organization, membership in organizations
             ],
             pending_invitations=invitaitons,
             onboarding=OnboardingStatus(

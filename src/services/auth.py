@@ -24,36 +24,38 @@ from src.schemas.user import UserCreate
 from src.services.email import EmailService
 from src.services.user import UserServices
 
+user_service = UserServices()
+email_service = EmailService()
+
 
 class AuthService:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-        self.user_service = UserServices(session=session)
-        self.email_service = EmailService()
-
     @staticmethod
     def _utc_now() -> datetime:
         return datetime.now(timezone.utc)
 
-    async def register(self, new_user: UserCreate) -> User:
-        existing_user = await self.user_service.get_by_email(new_user.email)
+    async def register(self, new_user: UserCreate, session: AsyncSession) -> User:
+        existing_user = await user_service.get_by_email(new_user.email, session)
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered!",
             )
 
-        user = await self.user_service.create(new_user)
-        token = await self._create_verification_token(user.id, TokenType.EMAIL_VERIFY)
-        await self.session.commit()
-        await self.email_service.send_verification_email(
+        user = await user_service.create(new_user, session)
+        token = await self._create_verification_token(
+            user.id, TokenType.EMAIL_VERIFY, session
+        )
+        await session.commit()
+        await email_service.send_verification_email(
             email=user.email,
             token=token,
         )
         return user
 
-    async def login(self, email: str, password: str) -> tuple[str, str]:
-        user = await self.user_service.get_by_email(email)
+    async def login(
+        self, email: str, password: str, session: AsyncSession
+    ) -> tuple[str, str]:
+        user = await user_service.get_by_email(email, session)
 
         if not user or not verify_password(password, user.password_hash):
             raise HTTPException(
@@ -70,24 +72,26 @@ class AuthService:
                 detail="Please verify your email",
             )
         access_token = create_access_token(str(user.id), user.email)
-        refresh_token = await self._issue_refresh_tokens(user.id)
-        await self.session.commit()
+        refresh_token = await self._issue_refresh_tokens(user.id, session)
+        await session.commit()
         return access_token, refresh_token
 
-    async def logout(self, refresh_token: str) -> None:
+    async def logout(self, refresh_token: str, session: AsyncSession) -> None:
         token_hash = hash_token(refresh_token)
         statement = select(RefreshToken).where(RefreshToken.token_hash == token_hash)
-        result = await self.session.exec(statement)
+        result = await session.exec(statement)
         db_token = result.first()
         if not db_token is None:
             db_token.revoked_at = self._utc_now()
-            await self.session.commit()
+            await session.commit()
 
-    async def refresh_session(self, refresh_token: str) -> tuple[str, str]:
+    async def refresh_session(
+        self, refresh_token: str, session: AsyncSession
+    ) -> tuple[str, str]:
         token_hash = hash_token(refresh_token)
 
         statement = select(RefreshToken).where(RefreshToken.token_hash == token_hash)
-        result = await self.session.exec(statement)
+        result = await session.exec(statement)
         db_token = result.first()
 
         if db_token is None:
@@ -103,14 +107,14 @@ class AuthService:
             )
         now = self._utc_now()
         if db_token.expires_at < now:
-            await self.session.delete(db_token)
-            await self.session.commit()
+            await session.delete(db_token)
+            await session.commit()
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or expire refresh token",
             )
 
-        user = await self.user_service.get_by_id(db_token.user_id)
+        user = await user_service.get_by_id(db_token.user_id, session)
         if not user:
             raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="User not found")
 
@@ -121,16 +125,20 @@ class AuthService:
             )
 
         db_token.revoked_at = now
-        self.session.add(db_token)
+        session.add(db_token)
 
         new_access_token = create_access_token(str(user.id), email=user.email)
-        new_refresh_token = await self._issue_refresh_tokens(user.id)
-        await self.session.commit()
+        new_refresh_token = await self._issue_refresh_tokens(user.id, session)
+        await session.commit()
         return new_access_token, new_refresh_token
 
-    async def verify_email(self, token_str: str) -> None:
+    async def verify_email(
+        self, token_str: str, session: AsyncSession
+    ) -> tuple[str, str]:
 
-        token_ob = await self._get_verification_token(token_str, TokenType.EMAIL_VERIFY)
+        token_ob = await self._get_verification_token(
+            token_str, TokenType.EMAIL_VERIFY, session
+        )
 
         if not token_ob or token_ob.expires_at < self._utc_now():
             raise HTTPException(
@@ -138,21 +146,24 @@ class AuthService:
                 detail="Invalid or expired validation token",
             )
 
-        user = await self.user_service.get_by_id(token_ob.user_id)
+        user = await user_service.get_by_id(token_ob.user_id, session)
         if not user:
             raise HTTPException(
                 status_code=HTTP_400_BAD_REQUEST, detail="User not found"
             )
-        if user.is_verified:
-            return
 
         user.is_verified = True
-        await self.session.delete(token_ob)
-        self.session.add(user)
-        await self.session.commit()
+        await session.delete(token_ob)
+        session.add(user)
+        new_access_token = create_access_token(str(user.id), email=user.email)
+        new_refresh_token = await self._issue_refresh_tokens(user.id, session)
+        await session.commit()
+        return new_access_token, new_refresh_token
 
-    async def resend_verification_email(self, email: str) -> None:
-        user = await self.user_service.get_by_email(email)
+    async def resend_verification_email(
+        self, email: str, session: AsyncSession
+    ) -> None:
+        user = await user_service.get_by_email(email, session)
 
         if not user:
             raise HTTPException(
@@ -165,70 +176,74 @@ class AuthService:
             )
 
         new_verification_token = await self._create_verification_token(
-            user.id, TokenType.EMAIL_VERIFY
+            user.id, TokenType.EMAIL_VERIFY, session
         )
-        await self.session.commit()
-        await self.email_service.send_verification_email(
+        await session.commit()
+        await email_service.send_verification_email(
             email=user.email,
             token=new_verification_token,
         )
 
-    async def forgot_password(self, email: str) -> None:
-        user = await self.user_service.get_by_email(email)
+    async def forgot_password(self, email: str, session: AsyncSession) -> None:
+        user = await user_service.get_by_email(email, session)
         if user is None:
             return
 
         reset_token = await self._create_verification_token(
-            user.id, TokenType.PASSWORD_RESET
+            user.id, TokenType.PASSWORD_RESET, session
         )
-        await self.session.commit()
-        await self.email_service.send_reset_password(
+        await session.commit()
+        await email_service.send_reset_password(
             email=user.email,
             token=reset_token,
         )
 
-    async def reset_password(self, token: str, new_password: str) -> None:
+    async def reset_password(
+        self, token: str, new_password: str, session: AsyncSession
+    ) -> None:
 
-        token_ob = await self._get_verification_token(token, TokenType.PASSWORD_RESET)
+        token_ob = await self._get_verification_token(
+            token, TokenType.PASSWORD_RESET, session
+        )
         if token_ob is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
         now = self._utc_now()
         if token_ob.expires_at < now:
-            await self.session.delete(token_ob)
+            await session.delete(token_ob)
 
-            await self.session.commit()
+            await session.commit()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Token expired"
             )
-        user = await self.user_service.get_by_id(token_ob.user_id)
+        user = await user_service.get_by_id(token_ob.user_id, session)
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
 
         user.password_hash = hash_password(new_password)
-        self.session.add(user)
+        session.add(user)
 
-        await self._revoke_all_refresh_tokens(user.id)
+        await self._revoke_all_refresh_tokens(user.id, session)
 
-        await self.session.delete(token_ob)
-        await self.session.commit()
+        await session.delete(token_ob)
+        await session.commit()
 
-    async def logout_all_devices(self, user_id: uuid.UUID) -> None:
-        user = await self.user_service.get_by_id(user_id)
+    async def logout_all_devices(
+        self, user_id: uuid.UUID, session: AsyncSession
+    ) -> None:
+        user = await user_service.get_by_id(user_id, session=session)
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
-        await self._revoke_all_refresh_tokens(user_id)
-        await self.session.commit()
+        await self._revoke_all_refresh_tokens(user_id, session)
+        await session.commit()
 
     async def _get_verification_token(
-        self,
-        token: str,
-        token_type: TokenType,
+        self, token: str, token_type: TokenType, session: AsyncSession
     ) -> VerificationToken | None:
         token_hash = hash_token(token)
 
@@ -237,14 +252,13 @@ class AuthService:
             VerificationToken.type == token_type,
         )
 
-        result = await self.session.exec(statement)
+        result = await session.exec(statement)
         return result.first()
 
     async def _revoke_all_refresh_tokens(
-        self,
-        user_id: uuid.UUID,
+        self, user_id: uuid.UUID, session: AsyncSession
     ) -> None:
-        result = await self.session.exec(
+        result = await session.exec(
             select(RefreshToken).where(
                 RefreshToken.user_id == user_id,
                 RefreshToken.revoked_at == None,
@@ -257,11 +271,9 @@ class AuthService:
             token.revoked_at = now
 
     async def _delete_verification_tokens(
-        self,
-        user_id: uuid.UUID,
-        token_type: TokenType,
+        self, user_id: uuid.UUID, token_type: TokenType, session: AsyncSession
     ) -> None:
-        result = await self.session.exec(
+        result = await session.exec(
             select(VerificationToken).where(
                 VerificationToken.user_id == user_id,
                 VerificationToken.type == token_type,
@@ -269,9 +281,11 @@ class AuthService:
         )
 
         for token in result.all():
-            await self.session.delete(token)
+            await session.delete(token)
 
-    async def _issue_refresh_tokens(self, user_id: uuid.UUID) -> str:
+    async def _issue_refresh_tokens(
+        self, user_id: uuid.UUID, session: AsyncSession
+    ) -> str:
         token_str = secrets.token_urlsafe(32)
         token_hash = hash_token(token_str)
         expires_at = self._utc_now() + timedelta(
@@ -281,11 +295,11 @@ class AuthService:
         refresh_token = RefreshToken(
             user_id=user_id, token_hash=token_hash, expires_at=expires_at
         )
-        self.session.add(refresh_token)
+        session.add(refresh_token)
         return token_str
 
     async def _create_verification_token(
-        self, user_id: uuid.UUID, token_type: TokenType
+        self, user_id: uuid.UUID, token_type: TokenType, session: AsyncSession
     ) -> str:
         token_str = secrets.token_urlsafe(32)
         token_hash = hash_token(token_str)
@@ -299,6 +313,6 @@ class AuthService:
             token_hash=token_hash,
             expires_at=expires_at,
         )
-        await self._delete_verification_tokens(user_id, token_type)
-        self.session.add(verification_token)
+        await self._delete_verification_tokens(user_id, token_type, session)
+        session.add(verification_token)
         return token_str

@@ -16,7 +16,8 @@ class Organization(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
     )
     slug: str = Field(nullable=False, unique=True)
     description: str | None = Field(default=None)
-    logo_url: str | None = Field(default=True)
+
+    logo_url: str | None = Field(default=None)
     created_by: uuid.UUID = Field(nullable=False, foreign_key="users.id")
 
 

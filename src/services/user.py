@@ -10,25 +10,22 @@ from src.utils.generate_avatar import get_avatar_text
 
 
 class UserServices:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-
-    async def get_by_email(self, email: str) -> User | None:
+    async def get_by_email(self, email: str, session: AsyncSession) -> User | None:
         statement = select(User).where(User.email == email)
-        result = await self.session.exec(statement)
+        result = await session.exec(statement)
         return result.first()
 
-    async def get_by_id(self, user_id: uuid.UUID) -> User | None:
-        return await self.session.get(User, user_id)
+    async def get_by_id(self, user_id: uuid.UUID, session: AsyncSession) -> User | None:
+        return await session.get(User, user_id)
 
-    async def create(self, new_user: UserCreate) -> User:
+    async def create(self, new_user: UserCreate, session: AsyncSession) -> User:
         user = User(
             email=new_user.email,
             full_name=new_user.full_name,
             password_hash=hash_password(new_user.password),
             avatar_url=get_avatar_text(new_user.full_name),
         )
-        self.session.add(user)
-        await self.session.commit()
-        await self.session.refresh(user)
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
         return user

@@ -1,7 +1,8 @@
+import uuid
+
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.database import uuid
 from src.models.organization import Organization, OrganizationMember, OrgRole
 from src.schemas.organization import CreateOrganization
 from src.utils.slug import generate_slug

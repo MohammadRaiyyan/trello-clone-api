@@ -8,11 +8,12 @@ from src.core.rate_limit import limiter
 from src.core.settings import settings
 from src.routes.auth import auth_router
 from src.routes.manifest import manifest_router
+from src.routes.organization import organization_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
+    print(settings.DATABASE_URL)
     yield
 
 
@@ -20,7 +21,7 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     lifespan=lifespan,
-    root_path="/api/v1/",
+    root_path="/api/v1",
 )
 
 app.state.limiter = limiter
@@ -42,6 +43,7 @@ async def rate_limit_handler(
 
 app.include_router(auth_router)
 app.include_router(manifest_router)
+app.include_router(organization_router)
 
 
 @app.get("/health")

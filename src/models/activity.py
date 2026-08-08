@@ -5,9 +5,9 @@ from typing import Any
 from sqlalchemy import Column
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlmodel import Field, Index, SQLModel, desc
+from sqlmodel import Field, Index, desc
 
-from src.models.base import BaseUUIModel, TimeStampMixin
+from src.models.base import BaseUUIDModel, TimeStampMixin
 
 
 class ActivityActionType(str, Enum):
@@ -81,7 +81,7 @@ class ActivityActionType(str, Enum):
     LABEL_DELETED = "label_deleted"
 
 
-class Activity(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class Activity(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "activity_logs"
 
     board_id: uuid.UUID = Field(

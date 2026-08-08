@@ -12,10 +12,10 @@ from sqlmodel import (
     text,
 )
 
-from src.models.base import BaseUUIModel, TimeStampMixin
+from src.models.base import BaseUUIDModel, TimeStampMixin
 
 
-class Card(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class Card(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "cards"
     column_id: uuid.UUID = Field(
         nullable=False, foreign_key="columns.id", ondelete="CASCADE"
@@ -45,7 +45,7 @@ class Card(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
     )
 
 
-class CardMember(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class CardMember(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "card_members"
 
     card_id: uuid.UUID = Field(
@@ -57,7 +57,7 @@ class CardMember(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
     __table_args__ = (UniqueConstraint("card_id", "user_id", name="uq_cards_member"),)
 
 
-class Label(BaseUUIModel, SQLModel, table=True):
+class Label(BaseUUIDModel, table=True):
     __tablename__ = "labels"
     board_id: uuid.UUID = Field(
         nullable=False, foreign_key="boards.id", ondelete="CASCADE"
@@ -87,7 +87,7 @@ class CardLabel(SQLModel, table=True):
     )
 
 
-class Comment(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class Comment(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "comments"
     card_id: uuid.UUID = Field(
         nullable=False, foreign_key="cards.id", ondelete="CASCADE"
@@ -97,7 +97,7 @@ class Comment(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
     is_edited: bool = Field(nullable=False, default=False)
 
 
-class Attachment(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class Attachment(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "attachments"
     card_id: uuid.UUID = Field(
         nullable=False, foreign_key="cards.id", ondelete="CASCADE"
@@ -109,7 +109,7 @@ class Attachment(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
     mime_type: str | None = Field(default=None)
 
 
-class Checklist(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class Checklist(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "checklists"
 
     card_id: uuid.UUID = Field(
@@ -119,7 +119,7 @@ class Checklist(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
     position: float = Field(nullable=False, sa_type=Double)
 
 
-class ChecklistItem(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class ChecklistItem(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "checklist_items"
 
     checklist_id: uuid.UUID = Field(

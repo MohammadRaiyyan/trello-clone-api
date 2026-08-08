@@ -1,11 +1,11 @@
 import uuid
 
-from sqlmodel import Double, Field, Index, SQLModel, text
+from sqlmodel import Double, Field, Index, text
 
-from src.models.base import BaseUUIModel, TimeStampMixin
+from src.models.base import BaseUUIDModel, TimeStampMixin
 
 
-class BoardColumn(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class BoardColumn(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "columns"
     board_id: uuid.UUID = Field(
         nullable=False, foreign_key="boards.id", ondelete="CASCADE"

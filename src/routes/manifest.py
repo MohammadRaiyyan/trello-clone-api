@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.database import get_current_user, get_session
+from src.core.dependencies import get_current_user
+from src.database.session import get_session
 from src.models.user import User
 from src.schemas.manifest import ManifestResponse
 from src.schemas.response import APIResponse

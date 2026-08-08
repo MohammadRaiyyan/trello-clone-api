@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlmodel.ext.asyncio.session import AsyncSession
-from starlette.status import HTTP_200_OK, HTTP_201_CREATED
 
 from src.core.rate_limit import limiter
-from src.database import get_session
+from src.database.session import get_session
 from src.schemas.response import APIResponse
 from src.schemas.user import (
     ForgotPassword,
@@ -18,7 +17,7 @@ from src.schemas.user import (
 )
 from src.services.auth import AuthService
 
-auth_router = APIRouter(prefix="auth")
+auth_router = APIRouter(prefix="/auth")
 auth_service: AuthService = AuthService()
 
 
@@ -27,6 +26,7 @@ auth_service: AuthService = AuthService()
 )
 @limiter.limit("5/minute")
 async def login(
+    request: Request,
     creds: UserLogin,
     session: AsyncSession = Depends(get_session),
 ) -> APIResponse[TokenResponse]:
@@ -50,13 +50,22 @@ async def login(
 )
 @limiter.limit("3/hour")
 async def register(
-    user_data: UserCreate, session: AsyncSession = Depends(get_session)
+    request: Request,
+    user_data: UserCreate,
+    session: AsyncSession = Depends(get_session),
 ) -> APIResponse[RegisterResponse]:
     user = await auth_service.register(user_data, session)
     return APIResponse(
         status=status.HTTP_201_CREATED,
-        message="Registration successful",
-        data=RegisterResponse.model_validate(user),
+        message="Registration successful. Please verify your email.",
+        data=RegisterResponse(
+            email=user.email,
+            avatar_url=user.avatar_url,
+            full_name=user.full_name,
+            id=user.id,
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+        ),
     )
 
 
@@ -67,7 +76,7 @@ async def register(
 )
 @limiter.limit("10/minute")
 async def verify_email(
-    payload: VerifyEmail, session: AsyncSession = Depends(get_session)
+    request: Request, payload: VerifyEmail, session: AsyncSession = Depends(get_session)
 ) -> APIResponse[TokenResponse]:
     access_token, refresh_token = await auth_service.verify_email(
         token_str=payload.token, session=session
@@ -84,7 +93,9 @@ async def verify_email(
 )
 @limiter.limit("3/hour")
 async def resend_verify_email(
-    payload: ReVerifyEmail, session: AsyncSession = Depends(get_session)
+    request: Request,
+    payload: ReVerifyEmail,
+    session: AsyncSession = Depends(get_session),
 ):
     await auth_service.resend_verification_email(email=payload.email, session=session)
     return APIResponse(
@@ -131,8 +142,11 @@ async def logout(
     response_model=APIResponse,
     status_code=status.HTTP_200_OK,
 )
+@limiter.limit("3/hour")
 async def forgot_password(
-    payload: ForgotPassword, session: AsyncSession = Depends(get_session)
+    request: Request,
+    payload: ForgotPassword,
+    session: AsyncSession = Depends(get_session),
 ) -> APIResponse:
     await auth_service.forgot_password(email=payload.email, session=session)
     return APIResponse(
@@ -146,8 +160,11 @@ async def forgot_password(
     response_model=APIResponse,
     status_code=status.HTTP_200_OK,
 )
+@limiter.limit("3/hour")
 async def reset_password(
-    payload: ResetPassword, session: AsyncSession = Depends(get_session)
+    request: Request,
+    payload: ResetPassword,
+    session: AsyncSession = Depends(get_session),
 ) -> APIResponse:
     await auth_service.reset_password(
         token=payload.token, new_password=payload.new_password, session=session

@@ -3,7 +3,7 @@ from enum import Enum
 
 from sqlmodel import AutoString, Field, Index, SQLModel, UniqueConstraint, text
 
-from src.models.base import BaseUUIModel, TimeStampMixin
+from src.models.base import BaseUUIDModel, TimeStampMixin
 
 
 class BoardVisibility(str, Enum):
@@ -12,7 +12,7 @@ class BoardVisibility(str, Enum):
     PUBLIC = "public"
 
 
-class Board(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class Board(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "boards"
 
     organization_id: uuid.UUID = Field(
@@ -47,7 +47,7 @@ class BoardRole(str, Enum):
     VIEWER = "viewer"
 
 
-class BoardMember(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class BoardMember(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "board_members"
     board_id: uuid.UUID = Field(
         nullable=False, foreign_key="boards.id", ondelete="CASCADE"

@@ -1,9 +1,9 @@
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field
 
-from src.models.base import BaseUUIModel, TimeStampMixin
+from src.models.base import BaseUUIDModel, TimeStampMixin
 
 
-class User(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class User(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "users"  # pyright: ignore[reportAssignmentType]
 
     email: str = Field(unique=True, nullable=False)

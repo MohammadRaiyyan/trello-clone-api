@@ -1,10 +1,9 @@
 import uuid
-from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 from src.models.organization import OrgRole
-from src.schemas.base import InvitationResponse, Organization, OrganizationResponse
+from src.schemas.base import InvitationResponse, OrganizationResponse
 
 
 class ManifestUser(BaseModel):
@@ -18,7 +17,7 @@ class ManifestUser(BaseModel):
 
 
 class ManifestOrganization(OrganizationResponse):
-    pass
+    role: OrgRole
 
 
 class OnboardingStatus(BaseModel):

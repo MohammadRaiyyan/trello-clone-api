@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.models.organization import OrgRole
 from src.schemas.base import uuid
 
 

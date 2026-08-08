@@ -2,14 +2,14 @@ import uuid
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import Column
+from sqlalchemy import Column, DateTime
 from sqlalchemy import Enum as SQLEnum
-from sqlmodel import AutoString, Field, SQLModel, UniqueConstraint
+from sqlmodel import AutoString, Field, UniqueConstraint
 
-from src.models.base import BaseUUIModel, TimeStampMixin
+from src.models.base import BaseUUIDModel, TimeStampMixin
 
 
-class Organization(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class Organization(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "organizations"  # pyright: ignore[reportAssignmentType]
     name: str = Field(
         nullable=False,
@@ -27,7 +27,7 @@ class OrgRole(str, Enum):
     MEMBER = "member"
 
 
-class OrganizationMember(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class OrganizationMember(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "organization_members"  # pyright: ignore[reportAssignmentType]
 
     organization_id: uuid.UUID = Field(
@@ -53,7 +53,7 @@ class InviteStatus(str, Enum):
     EXPIRED = "expired"
 
 
-class OrganizationInvite(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
+class OrganizationInvite(BaseUUIDModel, TimeStampMixin, table=True):
     __tablename__ = "organization_invites"  # pyright: ignore[reportAssignmentType]
 
     organization_id: uuid.UUID = Field(
@@ -77,7 +77,12 @@ class OrganizationInvite(BaseUUIModel, TimeStampMixin, SQLModel, table=True):
             nullable=False,
         ),
     )
-    expires_at: datetime = Field(nullable=False)
+    expires_at: datetime = Field(
+        sa_column=Column(
+            DateTime(timezone=True),
+            nullable=False,
+        )
+    )
     __table_args__ = (
         UniqueConstraint(
             "organization_id",

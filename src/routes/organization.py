@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.core.dependencies import get_current_user
@@ -52,6 +52,7 @@ async def create_organization(
 )
 @limiter.limit("10/minute")
 async def invite_member(
+    request: Request,
     organization_id: uuid.UUID,
     payload: CreateInvitation,
     user: User = Depends(get_current_user),
@@ -76,6 +77,7 @@ async def invite_member(
 )
 @limiter.limit("10/minute")
 async def re_invite_member(
+    request: Request,
     organization_id: uuid.UUID,
     invitation_id: uuid.UUID,
     user: User = Depends(get_current_user),
@@ -99,6 +101,7 @@ async def re_invite_member(
 )
 @limiter.limit("10/minute")
 async def revoke_invitation(
+    request: Request,
     organization_id: uuid.UUID,
     invitation_id: uuid.UUID,
     user: User = Depends(get_current_user),

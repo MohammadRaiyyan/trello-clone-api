@@ -1,0 +1,68 @@
+{% extends "base_email.html" %} {% block title %}You're invited{% endblock %} {%
+block content %}
+
+<h2 style="margin: 0 0 12px; font-size: 26px; font-weight: 700">
+  You're invited to join {{ organization_name }}
+</h2>
+
+<p style="margin: 0; font-size: 15px; line-height: 24px; color: #49454f">
+  {{ inviter_name }} has invited you to join
+  <strong>{{ organization_name }}</strong> on Trello Clone.
+</p>
+
+<p
+  style="
+    margin: 12px 0 24px;
+    font-size: 15px;
+    line-height: 24px;
+    color: #49454f;
+  "
+>
+  You've been invited as a <strong>{{ role }}</strong>. Accept the invitation to
+  start collaborating with the team.
+</p>
+
+<div style="text-align: center; margin-bottom: 24px">
+  <a
+    href="{{ invitation_url }}"
+    style="
+      display: inline-block;
+      padding: 14px 28px;
+      background: #6750a4;
+      color: white;
+      text-decoration: none;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 15px;
+    "
+  >
+    Accept invitation →
+  </a>
+</div>
+
+<div
+  style="
+    padding: 16px;
+    background: #f7f2fa;
+    border-radius: 14px;
+    font-size: 13px;
+    line-height: 22px;
+    color: #625b71;
+  "
+>
+  If the button doesn't work:
+
+  <br /><br />
+
+  <a href="{{ invitation_url }}" style="color: #6750a4; word-break: break-all">
+    {{ invitation_url }}
+  </a>
+</div>
+
+<p style="margin: 18px 0 0; font-size: 13px; line-height: 22px; color: #625b71">
+  This invitation expires in 24 hours.
+  <br />
+  If you weren't expecting this invitation, you can safely ignore this email.
+</p>
+
+{% endblock %}

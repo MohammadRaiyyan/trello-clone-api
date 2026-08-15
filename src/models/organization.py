@@ -50,7 +50,14 @@ class OrganizationMember(BaseUUIDModel, TimeStampMixin, table=True):
 class InviteStatus(str, Enum):
     PENDING = "pending"
     ACCEPTED = "accepted"
+    REVOKED = "revoked"
     EXPIRED = "expired"
+
+
+class InvitationDeliveryStatus(str, Enum):
+    PENDING = "pending"
+    SENT = "sent"
+    FAILED = "failed"
 
 
 class OrganizationInvite(BaseUUIDModel, TimeStampMixin, table=True):
@@ -73,6 +80,16 @@ class OrganizationInvite(BaseUUIDModel, TimeStampMixin, table=True):
             SQLEnum(
                 InviteStatus,
                 name="invite_status_type",
+            ),
+            nullable=False,
+        ),
+    )
+    delivery_status: InvitationDeliveryStatus = Field(
+        default=InvitationDeliveryStatus.PENDING,
+        sa_column=Column(
+            SQLEnum(
+                InvitationDeliveryStatus,
+                name="invitation_delivery_status_type",
             ),
             nullable=False,
         ),

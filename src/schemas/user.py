@@ -7,6 +7,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     full_name: str = Field(min_length=3, max_length=16)
     password: str = Field(min_length=8, max_length=16)
+    invitation_token: str | None = None
 
 
 class UserLogin(BaseModel):

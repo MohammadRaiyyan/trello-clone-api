@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str
     EMAIL_FROM: str
     FRONTEND_URL: str
+    INVITATION_EXPIRE_HOURS: int
 
     model_config = SettingsConfigDict(env_file=".env")
 

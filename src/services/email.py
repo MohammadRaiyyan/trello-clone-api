@@ -43,6 +43,30 @@ class EmailService:
             template=html,
         )
 
+    async def send_invitation_email(
+        self,
+        email: str,
+        token: str,
+        organization_name: str,
+        inviter_name: str,
+        role: str,
+    ) -> None:
+        invitation_url = f"{settings.FRONTEND_URL}/accept-invitation?token={token}"
+
+        html = self._render_template(
+            "invitation_email.html",
+            invitation_url=invitation_url,
+            organization_name=organization_name,
+            inviter_name=inviter_name,
+            role=role,
+        )
+
+        await self._send(
+            email,
+            subject=f"You've been invited to join {organization_name}",
+            template=html,
+        )
+
     async def _send(
         self,
         email: str,

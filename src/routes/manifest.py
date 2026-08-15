@@ -8,7 +8,7 @@ from src.schemas.manifest import ManifestResponse
 from src.schemas.response import APIResponse
 from src.services.manifest import ManifestServices
 
-manifest_router = APIRouter(prefix="/manifest")
+manifest_router = APIRouter(prefix="/manifests")
 
 manifest_services = ManifestServices()
 

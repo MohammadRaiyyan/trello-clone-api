@@ -16,12 +16,12 @@ class OrganizationService:
             select(Organization, OrganizationMember)
             .join(
                 OrganizationMember,
-                col(OrganizationMember.organization_id == Organization.id),
+                col(OrganizationMember.organization_id) == col(Organization.id),
             )
-            .where(col(OrganizationMember.user_id == user_id))
+            .where(OrganizationMember.user_id == user_id)
         )
-        restult = await session.exec(statement)
-        return list(restult.all())
+        result = await session.exec(statement)
+        return list(result.all())
 
     async def create_organization(
         self, user_id: uuid.UUID, new_org: CreateOrganization, session: AsyncSession

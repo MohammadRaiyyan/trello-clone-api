@@ -22,10 +22,12 @@ from src.models.auth import RefreshToken, TokenType, VerificationToken
 from src.models.user import User
 from src.schemas.user import UserCreate
 from src.services.email import EmailService
+from src.services.invitation import InvitationService
 from src.services.user import UserServices
 
 user_service = UserServices()
 email_service = EmailService()
+invitation_service = InvitationService()
 
 
 class AuthService:
@@ -33,23 +35,55 @@ class AuthService:
     def _utc_now() -> datetime:
         return datetime.now(timezone.utc)
 
-    async def register(self, new_user: UserCreate, session: AsyncSession) -> User:
-        existing_user = await user_service.get_by_email(new_user.email, session)
+    async def register(
+        self,
+        new_user: UserCreate,
+        session: AsyncSession,
+    ) -> User:
+
+        existing_user = await user_service.get_by_email(
+            new_user.email,
+            session,
+        )
+
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered!",
             )
 
-        user = await user_service.create(new_user, session)
-        token = await self._create_verification_token(
-            user.id, TokenType.EMAIL_VERIFY, session
+        user = await user_service.create(
+            new_user,
+            session,
         )
+
+        # Flush so user.id is guaranteed to be available
+        # before creating OrganizationMember.
+        await session.flush()
+
+        if new_user.invitation_token:
+            await invitation_service.accept_during_registration(
+                invitation_token=new_user.invitation_token,
+                user=user,
+                session=session,
+            )
+
+        verification_token = await self._create_verification_token(
+            user.id,
+            TokenType.EMAIL_VERIFY,
+            session,
+        )
+
         await session.commit()
-        await email_service.send_verification_email(
-            email=user.email,
-            token=token,
-        )
+
+        try:
+            await email_service.send_verification_email(
+                email=user.email,
+                token=verification_token,
+            )
+        except Exception:
+            pass
+
         return user
 
     async def login(
